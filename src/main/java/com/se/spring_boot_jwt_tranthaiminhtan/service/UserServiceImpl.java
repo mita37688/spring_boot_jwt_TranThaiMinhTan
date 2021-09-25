@@ -1,9 +1,13 @@
 package com.se.spring_boot_jwt_tranthaiminhtan.service;
 
+import com.se.spring_boot_jwt_tranthaiminhtan.authen.UserPrincipal;
 import com.se.spring_boot_jwt_tranthaiminhtan.entity.User;
 import com.se.spring_boot_jwt_tranthaiminhtan.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -14,5 +18,27 @@ public class UserServiceImpl implements UserService{
     @Override
     public User createUser(User user) {
         return userRepository.saveAndFlush(user);
+    }
+
+    @Override
+    public UserPrincipal findByUsername(String username) {
+        User user = userRepository.findByUserName(username);
+        UserPrincipal userPrincipal = new UserPrincipal();
+
+        if (null != user) {
+            Set<String> authorities = new HashSet<>();
+            if (null != user.getRoles())
+                user.getRoles().forEach(r -> {
+                    authorities.add(r.getRoleKey());
+                    r.getPermissions().forEach(
+                            p -> authorities.add(p.getPermissionKey()));
+                });
+
+            userPrincipal.setUserId(user.getId());
+            userPrincipal.setUsername(user.getUserName());
+            userPrincipal.setPassword(user.getPassword());
+            userPrincipal.setAuthorities(authorities);
+        }
+        return userPrincipal;
     }
 }
